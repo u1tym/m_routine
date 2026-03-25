@@ -28,6 +28,8 @@ create table plan.routine_adjust_day (
 create table plan.routine (
     id            serial  primary key,  -- 主キー
     title         text    not null,     -- 名称
+    activity_category_id integer not null -- カテゴリID
+        references public.activity_categories(id) on delete restrict,
     adapt_id      integer not null      -- 適用日ID
         references plan.routine_adapt_day(id) on delete restrict,
     adjust_id     integer               -- 調整日ID

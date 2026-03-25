@@ -102,7 +102,7 @@ async def insert_schedule_if_absent(
             FROM public.schedules s
             WHERE s.routine_id = $4
               AND NOT s.is_deleted
-              AND s.start_datetime::date = $2::date
+              AND s.start_datetime::date = $5::date
         )
         RETURNING id
         """,
@@ -110,6 +110,7 @@ async def insert_schedule_if_absent(
         start,
         activity_category_id,
         routine_id,
+        on_date,
     )
     return row is not None
 
