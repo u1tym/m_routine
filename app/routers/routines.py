@@ -200,6 +200,158 @@ async def delete_routine(
     return MessageResponse(message="削除フラグを設定しました")
 
 
+@router.put("/{routine_id}", response_model=RoutineCreateResponse)
+async def update_routine(
+    routine_id: int,
+    body: RoutineCreateRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> RoutineCreateResponse:
+    cat = await conn.fetchrow(
+        """
+        SELECT 1 FROM public.activity_categories
+        WHERE id = $1 AND NOT is_deleted
+        """,
+        body.activity_category_id,
+    )
+    if cat is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="activity_category_id が無効です",
+        )
+
+    async with conn.transaction():
+        current = await conn.fetchrow(
+            """
+            SELECT id, adapt_id, adjust_id
+            FROM plan.routine
+            WHERE id = $1 AND NOT is_deleted
+            FOR UPDATE
+            """,
+            routine_id,
+        )
+        if current is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="ルーティンが見つからないか、削除済みです",
+            )
+
+        adapt_id: int = int(current["adapt_id"])
+        adjust_id: int | None = current["adjust_id"]
+
+        try:
+            # 適用日マスタは既存行を更新（adapt_id は変えない）
+            await conn.execute(
+                """
+                UPDATE plan.routine_adapt_day
+                SET explain = $1, what_number = $2, order_week = $3
+                WHERE id = $4
+                """,
+                _explain_adapt(body.title, body.adapt),
+                body.adapt.number,
+                body.adapt.week,
+                adapt_id,
+            )
+
+            # 調整日マスタは、既存があれば更新、なければ追加、無ければ紐付け解除
+            if body.adjust is None:
+                await conn.execute(
+                    """
+                    UPDATE plan.routine
+                    SET title = $1, activity_category_id = $2, adjust_id = NULL
+                    WHERE id = $3
+                    """,
+                    body.title,
+                    body.activity_category_id,
+                    routine_id,
+                )
+            else:
+                if adjust_id is not None:
+                    await conn.execute(
+                        """
+                        UPDATE plan.routine_adjust_day
+                        SET explain = $1,
+                            avoid_holiday = $2,
+                            avoid_sun = $3,
+                            avoid_mon = $4,
+                            avoid_tue = $5,
+                            avoid_wed = $6,
+                            avoid_thu = $7,
+                            avoid_fri = $8,
+                            avoid_sat = $9,
+                            alt_day = $10
+                        WHERE id = $11
+                        """,
+                        _explain_adjust(body.title),
+                        body.adjust.avoid.holiday,
+                        body.adjust.avoid.sun,
+                        body.adjust.avoid.mon,
+                        body.adjust.avoid.tue,
+                        body.adjust.avoid.wed,
+                        body.adjust.avoid.thu,
+                        body.adjust.avoid.fri,
+                        body.adjust.avoid.sat,
+                        body.adjust.alt,
+                        adjust_id,
+                    )
+                    await conn.execute(
+                        """
+                        UPDATE plan.routine
+                        SET title = $1, activity_category_id = $2
+                        WHERE id = $3
+                        """,
+                        body.title,
+                        body.activity_category_id,
+                        routine_id,
+                    )
+                else:
+                    new_adjust_id = await conn.fetchval(
+                        """
+                        INSERT INTO plan.routine_adjust_day (
+                            explain,
+                            avoid_holiday,
+                            avoid_sun,
+                            avoid_mon,
+                            avoid_tue,
+                            avoid_wed,
+                            avoid_thu,
+                            avoid_fri,
+                            avoid_sat,
+                            alt_day
+                        )
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                        RETURNING id
+                        """,
+                        _explain_adjust(body.title),
+                        body.adjust.avoid.holiday,
+                        body.adjust.avoid.sun,
+                        body.adjust.avoid.mon,
+                        body.adjust.avoid.tue,
+                        body.adjust.avoid.wed,
+                        body.adjust.avoid.thu,
+                        body.adjust.avoid.fri,
+                        body.adjust.avoid.sat,
+                        body.adjust.alt,
+                    )
+                    await conn.execute(
+                        """
+                        UPDATE plan.routine
+                        SET title = $1, activity_category_id = $2, adjust_id = $3
+                        WHERE id = $4
+                        """,
+                        body.title,
+                        body.activity_category_id,
+                        int(new_adjust_id),
+                        routine_id,
+                    )
+        except asyncpg.UniqueViolationError:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="同じ title のルーティンが既に存在します",
+            ) from None
+
+    return RoutineCreateResponse(id=routine_id)
+
+
 @router.post("/{routine_id}/apply", response_model=ApplyResponse)
 async def apply_single_routine(
     routine_id: int,
