@@ -1,0 +1,25 @@
+ルーティンの種類を管理するテーブルを設計したい。
+
+ベースは
+create schema plan;
+
+create table plan.routine (
+    id    integer primary key,  -- 主キー
+    title text    not null      -- 名称
+);
+alter table plan.routine
+add constraint uq_routine_title
+  unique ( title );
+
+毎月
+「N日 / 末日 / 第N X曜日」
+という情報を管理したい。
+
+加えて、
+「X曜日 / 祝日 / 土日または祝日」なら、「翌平日 / 直近の平日」
+という情報を加えたい。
+
+このような情報を管理するためのテーブルを設計して欲しい。
+plan.routineに項目を追加して。
+必要なら、別のテーブルを追加して、複数テーブルでも良い。
+
