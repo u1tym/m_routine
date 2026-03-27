@@ -8,8 +8,8 @@ app = FastAPI(title="ルーティン管理 API", lifespan=lifespan)
 setup_logging()
 register_logging(app)
 
-app.include_router(routines.router, prefix="/api")
-app.include_router(categories.router, prefix="/api")
+app.include_router(routines.router)
+app.include_router(categories.router)
 
 
 @app.get("/health")

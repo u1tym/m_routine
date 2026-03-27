@@ -51,13 +51,13 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 | メソッド | パス | 説明 |
 |----------|------|------|
-| GET | `/api/routines` | ルーティン定義一覧（削除済み除く） |
-| POST | `/api/routines` | ルーティン定義の新規登録 |
-| DELETE | `/api/routines/{routine_id}` | ルーティン定義の論理削除（`is_deleted`） |
-| PUT | `/api/routines/{routine_id}` | ルーティン定義の編集（適用日/調整日含む） |
-| POST | `/api/routines/{routine_id}/apply` | 指定ルーティンを基準年月に反映（`schedules` へ挿入） |
-| POST | `/api/routines/apply-all` | 削除されていない全ルーティンを同様に反映 |
-| GET | `/api/categories` | アクティビティカテゴリ一覧（削除済み除く） |
+| GET | `/routines` | ルーティン定義一覧（削除済み除く） |
+| POST | `/routines` | ルーティン定義の新規登録 |
+| DELETE | `/routines/{routine_id}` | ルーティン定義の論理削除（`is_deleted`） |
+| PUT | `/routines/{routine_id}` | ルーティン定義の編集（適用日/調整日含む） |
+| POST | `/routines/{routine_id}/apply` | 指定ルーティンを基準年月に反映（`schedules` へ挿入） |
+| POST | `/routines/apply-all` | 削除されていない全ルーティンを同様に反映 |
+| GET | `/categories` | アクティビティカテゴリ一覧（削除済み除く） |
 
 リクエスト／レスポンスの型、DB との対応、日付算出ルールの詳細は **`API_DB_SPEC.md`** を参照してください。
 
