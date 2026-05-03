@@ -28,7 +28,22 @@ class AdjustInOut(BaseModel):
     alt: Literal[1, -1] = Field(description="1=未来方向、-1=過去方向")
 
 
-class RoutineListItem(BaseModel):
+class RoutineAdaptMonths(BaseModel):
+    adapt_jan: bool = True
+    adapt_feb: bool = True
+    adapt_mar: bool = True
+    adapt_apr: bool = True
+    adapt_may: bool = True
+    adapt_jun: bool = True
+    adapt_jul: bool = True
+    adapt_aug: bool = True
+    adapt_sep: bool = True
+    adapt_oct: bool = True
+    adapt_nov: bool = True
+    adapt_dec: bool = True
+
+
+class RoutineListItem(RoutineAdaptMonths):
     id: int
     title: str
     activity_category_id: int
@@ -42,7 +57,7 @@ class CategoryItem(BaseModel):
     name: str
 
 
-class RoutineCreateRequest(BaseModel):
+class RoutineCreateRequest(RoutineAdaptMonths):
     title: str
     activity_category_id: int
     adapt: AdaptInOut

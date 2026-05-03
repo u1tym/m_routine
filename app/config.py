@@ -1,3 +1,4 @@
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +14,13 @@ class Settings(BaseSettings):
     postgres_db: str = "tamtdb"
     postgres_user: str = "tamtuser"
     postgres_password: str = "TAMTTAMT"
+
+    jwt_secret_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("JWT_SECRET_KEY", "SECRET_KEY"),
+    )
+    jwt_algorithm: str = "HS256"
+    cookie_name: str = "access_token"
 
     @property
     def database_dsn(self) -> str:

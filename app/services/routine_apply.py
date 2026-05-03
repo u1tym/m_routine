@@ -19,8 +19,30 @@ async def load_holiday_dates(conn: asyncpg.Connection, center_year: int) -> froz
     return frozenset(r["date"] for r in rows)
 
 
+_ADAPT_MONTH_KEYS = (
+    "adapt_jan",
+    "adapt_feb",
+    "adapt_mar",
+    "adapt_apr",
+    "adapt_may",
+    "adapt_jun",
+    "adapt_jul",
+    "adapt_aug",
+    "adapt_sep",
+    "adapt_oct",
+    "adapt_nov",
+    "adapt_dec",
+)
+
+
+def _month_enabled_for_apply(row: asyncpg.Record, month: int) -> bool:
+    key = _ADAPT_MONTH_KEYS[month - 1]
+    v = row[key]
+    return True if v is None else bool(v)
+
+
 async def fetch_routine_for_apply(
-    conn: asyncpg.Connection, routine_id: int
+    conn: asyncpg.Connection, routine_id: int, aid: int
 ) -> asyncpg.Record | None:
     return await conn.fetchrow(
         """
@@ -28,6 +50,18 @@ async def fetch_routine_for_apply(
             r.id,
             r.title,
             r.activity_category_id,
+            r.adapt_jan,
+            r.adapt_feb,
+            r.adapt_mar,
+            r.adapt_apr,
+            r.adapt_may,
+            r.adapt_jun,
+            r.adapt_jul,
+            r.adapt_aug,
+            r.adapt_sep,
+            r.adapt_oct,
+            r.adapt_nov,
+            r.adapt_dec,
             ad.what_number,
             ad.order_week,
             aj.avoid_holiday,
@@ -42,9 +76,10 @@ async def fetch_routine_for_apply(
         FROM plan.routine r
         INNER JOIN plan.routine_adapt_day ad ON ad.id = r.adapt_id
         LEFT JOIN plan.routine_adjust_day aj ON aj.id = r.adjust_id
-        WHERE r.id = $1 AND NOT r.is_deleted
+        WHERE r.id = $1 AND r.aid = $2 AND NOT r.is_deleted
         """,
         routine_id,
+        aid,
     )
 
 
@@ -119,6 +154,7 @@ async def apply_routine_to_month(
     conn: asyncpg.Connection,
     *,
     routine_id: int,
+    aid: int,
     year: int,
     month: int,
     holiday_dates: frozenset[date],
@@ -127,9 +163,12 @@ async def apply_routine_to_month(
     戻り値: (挿入した日付文字列のリスト, エラーメッセージ)。
     エラー時はメッセージを返し挿入は行わない（該当ルーティンだけスキップ可能）。
     """
-    row = await fetch_routine_for_apply(conn, routine_id)
+    row = await fetch_routine_for_apply(conn, routine_id, aid)
     if row is None:
         return [], "ルーティンが見つからないか削除済みです"
+
+    if not _month_enabled_for_apply(row, month):
+        return [], None
 
     base = compute_adapt_date(year, month, row["what_number"], row["order_week"])
     if base is None:
