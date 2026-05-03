@@ -99,6 +99,7 @@ def _avoid_from_row(row: asyncpg.Record) -> AvoidInOut:
 async def insert_schedule_if_absent(
     conn: asyncpg.Connection,
     *,
+    aid: int,
     title: str,
     on_date: date,
     activity_category_id: int,
@@ -118,7 +119,8 @@ async def insert_schedule_if_absent(
             details,
             is_todo_completed,
             is_deleted,
-            routine_id
+            routine_id,
+            aid
         )
         SELECT
             $1,
@@ -131,13 +133,14 @@ async def insert_schedule_if_absent(
             '',
             false,
             false,
-            $4
+            $4,
+            $5
         WHERE NOT EXISTS (
             SELECT 1
             FROM public.schedules s
             WHERE s.routine_id = $4
               AND NOT s.is_deleted
-              AND s.start_datetime::date = $5::date
+              AND s.start_datetime::date = $6::date
         )
         RETURNING id
         """,
@@ -145,6 +148,7 @@ async def insert_schedule_if_absent(
         start,
         activity_category_id,
         routine_id,
+        aid,
         on_date,
     )
     return row is not None
@@ -188,6 +192,7 @@ async def apply_routine_to_month(
     inserted: list[str] = []
     if await insert_schedule_if_absent(
         conn,
+        aid=aid,
         title=row["title"],
         on_date=final_date,
         activity_category_id=row["activity_category_id"],
