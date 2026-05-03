@@ -67,18 +67,18 @@ async def list_routines(
             c.name AS activity_category_name,
             ad.what_number,
             ad.order_week,
-            r.adapt_jan,
-            r.adapt_feb,
-            r.adapt_mar,
-            r.adapt_apr,
-            r.adapt_may,
-            r.adapt_jun,
-            r.adapt_jul,
-            r.adapt_aug,
-            r.adapt_sep,
-            r.adapt_oct,
-            r.adapt_nov,
-            r.adapt_dec,
+            ad.adapt_jan,
+            ad.adapt_feb,
+            ad.adapt_mar,
+            ad.adapt_apr,
+            ad.adapt_may,
+            ad.adapt_jun,
+            ad.adapt_jul,
+            ad.adapt_aug,
+            ad.adapt_sep,
+            ad.adapt_oct,
+            ad.adapt_nov,
+            ad.adapt_dec,
             aj.avoid_holiday,
             aj.avoid_sun,
             aj.avoid_mon,
@@ -151,13 +151,41 @@ async def create_routine(
     async with conn.transaction():
         adapt_id = await conn.fetchval(
             """
-            INSERT INTO plan.routine_adapt_day (explain, what_number, order_week)
-            VALUES ($1, $2, $3)
+            INSERT INTO plan.routine_adapt_day (
+                explain,
+                what_number,
+                order_week,
+                adapt_jan,
+                adapt_feb,
+                adapt_mar,
+                adapt_apr,
+                adapt_may,
+                adapt_jun,
+                adapt_jul,
+                adapt_aug,
+                adapt_sep,
+                adapt_oct,
+                adapt_nov,
+                adapt_dec
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
             RETURNING id
             """,
             _explain_adapt(body.title, body.adapt),
             body.adapt.number,
             body.adapt.week,
+            body.adapt_jan,
+            body.adapt_feb,
+            body.adapt_mar,
+            body.adapt_apr,
+            body.adapt_may,
+            body.adapt_jun,
+            body.adapt_jul,
+            body.adapt_aug,
+            body.adapt_sep,
+            body.adapt_oct,
+            body.adapt_nov,
+            body.adapt_dec,
         )
         adjust_id: int | None = None
         if body.adjust is not None:
@@ -199,24 +227,9 @@ async def create_routine(
                     adapt_id,
                     adjust_id,
                     is_deleted,
-                    aid,
-                    adapt_jan,
-                    adapt_feb,
-                    adapt_mar,
-                    adapt_apr,
-                    adapt_may,
-                    adapt_jun,
-                    adapt_jul,
-                    adapt_aug,
-                    adapt_sep,
-                    adapt_oct,
-                    adapt_nov,
-                    adapt_dec
+                    aid
                 )
-                VALUES (
-                    $1, $2, $3, $4, false, $5,
-                    $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
-                )
+                VALUES ($1, $2, $3, $4, false, $5)
                 RETURNING id
                 """,
                 body.title,
@@ -224,18 +237,6 @@ async def create_routine(
                 adapt_id,
                 adjust_id,
                 aid,
-                body.adapt_jan,
-                body.adapt_feb,
-                body.adapt_mar,
-                body.adapt_apr,
-                body.adapt_may,
-                body.adapt_jun,
-                body.adapt_jul,
-                body.adapt_aug,
-                body.adapt_sep,
-                body.adapt_oct,
-                body.adapt_nov,
-                body.adapt_dec,
             )
         except asyncpg.UniqueViolationError:
             raise HTTPException(
@@ -314,12 +315,38 @@ async def update_routine(
             await conn.execute(
                 """
                 UPDATE plan.routine_adapt_day
-                SET explain = $1, what_number = $2, order_week = $3
-                WHERE id = $4
+                SET explain = $1,
+                    what_number = $2,
+                    order_week = $3,
+                    adapt_jan = $4,
+                    adapt_feb = $5,
+                    adapt_mar = $6,
+                    adapt_apr = $7,
+                    adapt_may = $8,
+                    adapt_jun = $9,
+                    adapt_jul = $10,
+                    adapt_aug = $11,
+                    adapt_sep = $12,
+                    adapt_oct = $13,
+                    adapt_nov = $14,
+                    adapt_dec = $15
+                WHERE id = $16
                 """,
                 _explain_adapt(body.title, body.adapt),
                 body.adapt.number,
                 body.adapt.week,
+                body.adapt_jan,
+                body.adapt_feb,
+                body.adapt_mar,
+                body.adapt_apr,
+                body.adapt_may,
+                body.adapt_jun,
+                body.adapt_jul,
+                body.adapt_aug,
+                body.adapt_sep,
+                body.adapt_oct,
+                body.adapt_nov,
+                body.adapt_dec,
                 adapt_id,
             )
 
@@ -330,35 +357,11 @@ async def update_routine(
                     UPDATE plan.routine
                     SET title = $1,
                         activity_category_id = $2,
-                        adjust_id = NULL,
-                        adapt_jan = $3,
-                        adapt_feb = $4,
-                        adapt_mar = $5,
-                        adapt_apr = $6,
-                        adapt_may = $7,
-                        adapt_jun = $8,
-                        adapt_jul = $9,
-                        adapt_aug = $10,
-                        adapt_sep = $11,
-                        adapt_oct = $12,
-                        adapt_nov = $13,
-                        adapt_dec = $14
-                    WHERE id = $15
+                        adjust_id = NULL
+                    WHERE id = $3
                     """,
                     body.title,
                     body.activity_category_id,
-                    body.adapt_jan,
-                    body.adapt_feb,
-                    body.adapt_mar,
-                    body.adapt_apr,
-                    body.adapt_may,
-                    body.adapt_jun,
-                    body.adapt_jul,
-                    body.adapt_aug,
-                    body.adapt_sep,
-                    body.adapt_oct,
-                    body.adapt_nov,
-                    body.adapt_dec,
                     routine_id,
                 )
             else:
@@ -394,35 +397,11 @@ async def update_routine(
                         """
                         UPDATE plan.routine
                         SET title = $1,
-                            activity_category_id = $2,
-                            adapt_jan = $3,
-                            adapt_feb = $4,
-                            adapt_mar = $5,
-                            adapt_apr = $6,
-                            adapt_may = $7,
-                            adapt_jun = $8,
-                            adapt_jul = $9,
-                            adapt_aug = $10,
-                            adapt_sep = $11,
-                            adapt_oct = $12,
-                            adapt_nov = $13,
-                            adapt_dec = $14
-                        WHERE id = $15
+                            activity_category_id = $2
+                        WHERE id = $3
                         """,
                         body.title,
                         body.activity_category_id,
-                        body.adapt_jan,
-                        body.adapt_feb,
-                        body.adapt_mar,
-                        body.adapt_apr,
-                        body.adapt_may,
-                        body.adapt_jun,
-                        body.adapt_jul,
-                        body.adapt_aug,
-                        body.adapt_sep,
-                        body.adapt_oct,
-                        body.adapt_nov,
-                        body.adapt_dec,
                         routine_id,
                     )
                 else:
@@ -459,36 +438,12 @@ async def update_routine(
                         UPDATE plan.routine
                         SET title = $1,
                             activity_category_id = $2,
-                            adjust_id = $3,
-                            adapt_jan = $4,
-                            adapt_feb = $5,
-                            adapt_mar = $6,
-                            adapt_apr = $7,
-                            adapt_may = $8,
-                            adapt_jun = $9,
-                            adapt_jul = $10,
-                            adapt_aug = $11,
-                            adapt_sep = $12,
-                            adapt_oct = $13,
-                            adapt_nov = $14,
-                            adapt_dec = $15
-                        WHERE id = $16
+                            adjust_id = $3
+                        WHERE id = $4
                         """,
                         body.title,
                         body.activity_category_id,
                         int(new_adjust_id),
-                        body.adapt_jan,
-                        body.adapt_feb,
-                        body.adapt_mar,
-                        body.adapt_apr,
-                        body.adapt_may,
-                        body.adapt_jun,
-                        body.adapt_jul,
-                        body.adapt_aug,
-                        body.adapt_sep,
-                        body.adapt_oct,
-                        body.adapt_nov,
-                        body.adapt_dec,
                         routine_id,
                     )
         except asyncpg.UniqueViolationError:
