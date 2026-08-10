@@ -16,7 +16,7 @@ async def list_categories(
     rows = await conn.fetch(
         """
         SELECT id, name
-        FROM public.activity_categories
+        FROM calendar.activity_categories
         WHERE NOT is_deleted
         ORDER BY id
         """

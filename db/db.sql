@@ -29,7 +29,7 @@ create table plan.routine (
     id            serial  primary key,  -- 主キー
     title         text    not null,     -- 名称
     activity_category_id integer not null -- カテゴリID
-        references public.activity_categories(id) on delete restrict,
+        references calendar.activity_categories(id) on delete restrict,
     adapt_id      integer not null      -- 適用日ID
         references plan.routine_adapt_day(id) on delete restrict,
     adjust_id     integer               -- 調整日ID
@@ -52,14 +52,14 @@ alter table plan.routine add constraint uq_routine_title unique ( title );
 --   what_numberには、何個目か（負数は末からカウント）
 --
 -- plan.routine_adjust_day に、除外する日と、その場合の代替日の情報を格納する
---   avoid_holiday は、祝日を除外するか否か。祝日は、public.holidaysに格納される日
+--   avoid_holiday は、祝日を除外するか否か。祝日は、calendar.holidaysに格納される日
 --   avoid_sum～avoid_satは、日曜日～土曜日、それぞれを除外するか否か。
 --   alt_dayは、1の場合は、未来日方向で、除外日から外れる最初の日を代替日にする
 --             -1の場合は、過去方向で、除外日から外れる最初の日を代替日にする
 
-alter table schedules add column routine_id integer;
+alter table calendar.schedules add column routine_id integer;
 
-alter table schedules
+alter table calendar.schedules
 add constraint fk_schedules_routine
   foreign key (routine_id)
   references plan.routine(id)

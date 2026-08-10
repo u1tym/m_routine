@@ -1,11 +1,11 @@
 # ルーティン管理 API（FastAPI）
 
-PostgreSQL に保存されたルーティン定義の参照・登録・論理削除、および指定年月への `public.schedules` への反映を行う REST API です。
+PostgreSQL に保存されたルーティン定義の参照・登録・論理削除、および指定年月への `calendar.schedules` への反映を行う REST API です。
 
 ## 前提条件
 
 - Python 3.11 以上推奨（3.12 で動作確認）
-- 既存の PostgreSQL に、仕様どおりのスキーマ（`plan` スキーマ、`public.schedules` / `public.activity_categories` / `public.holidays` など）が作成済みであること
+- 既存の PostgreSQL に、仕様どおりのスキーマ（`plan` スキーマ、`calendar.schedules` / `calendar.activity_categories` / `calendar.holidays` など）が作成済みであること
 
 ## セットアップ
 

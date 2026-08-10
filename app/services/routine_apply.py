@@ -10,7 +10,7 @@ from app.services.routine_dates import compute_adapt_date
 async def load_holiday_dates(conn: asyncpg.Connection, center_year: int) -> frozenset[date]:
     rows = await conn.fetch(
         """
-        SELECT date FROM public.holidays
+        SELECT date FROM calendar.holidays
         WHERE date >= $1::date AND date <= $2::date
         """,
         date(center_year - 1, 1, 1),
@@ -108,7 +108,7 @@ async def insert_schedule_if_absent(
     start = datetime(on_date.year, on_date.month, on_date.day)
     row = await conn.fetchrow(
         """
-        INSERT INTO public.schedules (
+        INSERT INTO calendar.schedules (
             title,
             start_datetime,
             duration,
@@ -137,7 +137,7 @@ async def insert_schedule_if_absent(
             $5
         WHERE NOT EXISTS (
             SELECT 1
-            FROM public.schedules s
+            FROM calendar.schedules s
             WHERE s.routine_id = $4
               AND NOT s.is_deleted
               AND s.start_datetime::date = $6::date

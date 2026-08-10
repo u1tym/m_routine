@@ -89,7 +89,7 @@ async def list_routines(
             aj.avoid_sat,
             aj.alt_day
         FROM plan.routine r
-        INNER JOIN public.activity_categories c ON c.id = r.activity_category_id
+        INNER JOIN calendar.activity_categories c ON c.id = r.activity_category_id
         INNER JOIN plan.routine_adapt_day ad ON ad.id = r.adapt_id
         LEFT JOIN plan.routine_adjust_day aj ON aj.id = r.adjust_id
         WHERE NOT r.is_deleted AND r.aid = $1
@@ -137,7 +137,7 @@ async def create_routine(
 ) -> RoutineCreateResponse:
     cat = await conn.fetchrow(
         """
-        SELECT 1 FROM public.activity_categories
+        SELECT 1 FROM calendar.activity_categories
         WHERE id = $1 AND NOT is_deleted
         """,
         body.activity_category_id,
@@ -279,7 +279,7 @@ async def update_routine(
 ) -> RoutineCreateResponse:
     cat = await conn.fetchrow(
         """
-        SELECT 1 FROM public.activity_categories
+        SELECT 1 FROM calendar.activity_categories
         WHERE id = $1 AND NOT is_deleted
         """,
         body.activity_category_id,

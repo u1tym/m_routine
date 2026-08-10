@@ -86,7 +86,7 @@ Python の `date.weekday()`（月=0…日=6）を DB の曜日（日=0…土=6�
 |----|-----|------|
 | `id` | serial PK | ID |
 | `explain` | text NOT NULL | 説明（API 登録時は自動生成） |
-| `avoid_holiday` | bool | `public.holidays.date` に含まれる日を除外するか |
+| `avoid_holiday` | bool | `calendar.holidays.date` に含まれる日を除外するか |
 | `avoid_sun` … `avoid_sat` | bool | 日〜土をそれぞれ除外するか（DB 曜日 0〜6 と対応） |
 | `alt_day` | int IN (1, -1) | **1** = 未来方向に進めて最初の非除外日、**-1** = 過去方向 |
 
@@ -95,7 +95,7 @@ Python の `date.weekday()`（月=0…日=6）を DB の曜日（日=0…土=6�
 1. 算出した基準日が除外に該当しない → その日を採用  
 2. 該当する → `alt_day` の符号に応じて 1 日ずつ移動し、**最初に除外に該当しない日**を採用（最大約 400 日探索。見つからなければ失敗扱い）
 
-`public.holidays` は **基準年の前後 1 年分**をクエリしてキャッシュし、月をまたいだ移動にも利用する。
+`calendar.holidays` は **基準年の前後 1 年分**をクエリしてキャッシュし、月をまたいだ移動にも利用する。
 
 ### 3.4 `plan.routine`（ルーティン本体）
 
@@ -103,7 +103,7 @@ Python の `date.weekday()`（月=0…日=6）を DB の曜日（日=0…土=6�
 |----|-----|------|
 | `id` | serial PK | ルーティン ID |
 | `title` | text NOT NULL | 名称（**ユニーク制約 `uq_routine_title`**） |
-| `activity_category_id` | int NOT NULL FK | `public.activity_categories(id)` |
+| `activity_category_id` | int NOT NULL FK | `calendar.activity_categories(id)` |
 | `adapt_id` | int NOT NULL FK | `plan.routine_adapt_day(id)` |
 | `adjust_id` | int NULL FK | `plan.routine_adjust_day(id)`。調整なしの場合は NULL |
 | `aid` | int NOT NULL FK | **`public.accounts(id)`**。JWT で特定したログインユーザーのアカウント ID |
@@ -113,17 +113,17 @@ Python の `date.weekday()`（月=0…日=6）を DB の曜日（日=0…土=6�
 
 月ごとの反映可否（`adapt_jan`～`adapt_dec`）は **`plan.routine` には持たず**、`plan.routine_adapt_day` に保持する。
 
-### 3.5 `public.activity_categories`
+### 3.5 `calendar.activity_categories`
 
 API のカテゴリ一覧・登録時検証では **`is_deleted = false`** のみ扱う。
 
-### 3.6 `public.holidays`
+### 3.6 `calendar.holidays`
 
 | 列 | 意味 |
 |----|------|
 | `date` | 祝日の日付（unique インデックスあり） |
 
-### 3.7 `public.schedules`（反映先）
+### 3.7 `calendar.schedules`（反映先）
 
 反映 API が挿入する行のマッピング:
 
@@ -219,7 +219,7 @@ API のカテゴリ一覧・登録時検証では **`is_deleted = false`** の�
 **処理概要**
 
 1. 対象ルーティンを `id`・**`aid`**・`is_deleted = false` で取得（存在しなければ 404）
-2. `public.activity_categories` を検証（削除済みは無効。無効なら 400）
+2. `calendar.activity_categories` を検証（削除済みは無効。無効なら 400）
 3. `plan.routine_adapt_day` を更新（`adapt_id` は変更しない。**説明・適用ルール・月次フラグ**をすべて反映）
 4. `adjust` の有無に応じて `plan.routine_adjust_day`（既存更新 or 新規追加）または `plan.routine.adjust_id = NULL`
 5. `plan.routine` の `title` / `activity_category_id`（および必要なら `adjust_id`）を更新（`title` はユニーク）
